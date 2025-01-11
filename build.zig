@@ -10,7 +10,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
-        .name = "kernel",
+        .name = "kernel.elf",
         .root_source_file = b.path("src/kernel.zig"),
         .target = b.resolveTargetQuery(.{
             .os_tag = .freestanding,
