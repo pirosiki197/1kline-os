@@ -9,18 +9,22 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
+    const target = b.resolveTargetQuery(.{
+        .os_tag = .freestanding,
+        .cpu_arch = .riscv32,
+        .abi = .none,
+        .ofmt = .elf,
+    });
+
     const exe = b.addExecutable(.{
         .name = "kernel.elf",
         .root_source_file = b.path("src/kernel.zig"),
-        .target = b.resolveTargetQuery(.{
-            .os_tag = .freestanding,
-            .cpu_arch = .riscv32,
-            .abi = .none,
-            .ofmt = .elf,
-        }),
+        .target = target,
         .optimize = optimize,
     });
     exe.setLinkerScript(b.path("kernel.ld"));
+    exe.addIncludePath(b.path("src"));
+    exe.addCSourceFile(.{ .file = b.path("src/sbi.c") });
     exe.entry = .{ .symbol_name = "boot" };
 
     // This declares intent for the executable to be installed into the
