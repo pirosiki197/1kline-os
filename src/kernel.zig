@@ -21,7 +21,7 @@ fn put_char(c: u8) void {
 pub export fn kernel_main() void {
     const msg = "\n\nHello World!\n";
     for (msg) |c| {
-        put_char(msg[c]);
+        put_char(c);
     }
 
     while (true) {
