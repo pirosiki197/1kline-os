@@ -46,8 +46,26 @@ fn printf(comptime fmt: []const u8, args: anytype) void {
                 }
                 field_idx += 1;
             },
+            'x' => {
+                const value: usize = @intCast(@field(args, fields_info[field_idx].name));
+                comptime var i: isize = 7;
+                inline while (i >= 0) : (i -= 1) {
+                    const nibble = (value >> (i * 4)) & 0xf;
+                    if (nibble < 10) {
+                        put_char('0' + @as(u8, nibble));
+                    } else {
+                        put_char('a' + @as(u8, nibble - 10));
+                    }
+                }
+            },
             else => {},
         }
+    }
+}
+
+fn print(s: []const u8) void {
+    for (s) |c| {
+        put_char(c);
     }
 }
 
@@ -93,9 +111,10 @@ fn put_char(c: u8) void {
 }
 
 pub export fn kernel_main() void {
-    printf("Hello, world!\n", .{});
+    print("Hello, world!\n");
     printf("Hello, %s!\n", .{"world"});
     printf("1 + 2 = %d\n", .{3});
+    printf("0x12345678 = %x\n", .{0x12345678});
 
     while (true) {
         asm volatile ("wfi");
