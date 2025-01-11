@@ -21,6 +21,6 @@ pub export fn boot() linksection(".text.boot") callconv(.Naked) void {
         \\ mv sp, %[stack_top]
         \\ j kernel_main
         :
-        : [stack_top] "r" (__stack_top),
+        : [stack_top] "r" (&__stack_top),
     );
 }
