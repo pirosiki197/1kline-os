@@ -22,12 +22,15 @@ fn memcpy(dst: [*]u8, src: [*]const u8, n: usize) *anyopaque {
     return dst;
 }
 
+fn panic(comptime fmt: []const u8, args: anytype) noreturn {
+    printf("PANIC: " ++ fmt ++ "\n", args);
+    while (true) {}
+}
+
 pub export fn kernel_main() void {
-    var a: usize = 5;
-    var b: usize = undefined;
-    printf("a = %d\n", .{a});
-    _ = memcpy(@ptrCast(&b), @ptrCast(&a), @sizeOf(usize));
-    printf("b = %d\n", .{b});
+    panic("booted!", .{});
+
+    print("unreachable\n");
 
     while (true) {
         asm volatile ("wfi");
