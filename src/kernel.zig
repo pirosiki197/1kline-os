@@ -3,7 +3,7 @@ const sbi = @cImport({
 });
 
 extern const __stack_top: [*]u8;
-extern var __bss: [*]u8;
+extern const __bss: [*]u8;
 extern const __bss_end: [*]u8;
 
 fn memset(buf: [*]u8, c: u8, n: usize) [*]u8 {
@@ -20,8 +20,8 @@ fn put_char(c: u8) void {
 
 pub export fn kernel_main() void {
     const msg = "\n\nHello World!\n";
-    for (0..msg.len) |i| {
-        put_char(msg[i]);
+    for (msg) |c| {
+        put_char(msg[c]);
     }
 
     while (true) {

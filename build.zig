@@ -24,7 +24,10 @@ pub fn build(b: *std.Build) void {
     });
     exe.setLinkerScript(b.path("kernel.ld"));
     exe.addIncludePath(b.path("src"));
-    exe.addCSourceFile(.{ .file = b.path("src/sbi.c") });
+    exe.addCSourceFile(.{
+        .file = b.path("src/sbi.c"),
+        .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-nostdlib", "--target=riscv32", "-ffreestanding" },
+    });
     exe.entry = .{ .symbol_name = "boot" };
 
     // This declares intent for the executable to be installed into the
