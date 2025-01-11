@@ -14,11 +14,20 @@ fn memset(buf: [*]u8, c: u8, n: usize) [*]u8 {
     return buf;
 }
 
+fn memcpy(dst: [*]u8, src: [*]const u8, n: usize) *anyopaque {
+    var p = dst;
+    for (0..n) |i| {
+        p[i] = src[i];
+    }
+    return dst;
+}
+
 pub export fn kernel_main() void {
-    print("Hello, world!\n");
-    printf("Hello, %s!\n", .{"world"});
-    printf("1 + 2 = %d\n", .{3});
-    printf("0x12345678 = %x\n", .{0x12345678});
+    var a: usize = 5;
+    var b: usize = undefined;
+    printf("a = %d\n", .{a});
+    _ = memcpy(@ptrCast(&b), @ptrCast(&a), @sizeOf(usize));
+    printf("b = %d\n", .{b});
 
     while (true) {
         asm volatile ("wfi");
