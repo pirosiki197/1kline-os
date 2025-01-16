@@ -57,6 +57,7 @@ pub fn printf(comptime fmt: []const u8, args: anytype) void {
                         put_char('a' + @as(u8, @intCast(nibble - 10)));
                     }
                 }
+                field_idx += 1;
             },
             else => {},
         }
