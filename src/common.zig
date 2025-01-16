@@ -52,9 +52,9 @@ pub fn printf(comptime fmt: []const u8, args: anytype) void {
                 inline while (i >= 0) : (i -= 1) {
                     const nibble = (value >> (i * 4)) & 0xf;
                     if (nibble < 10) {
-                        put_char('0' + @as(u8, nibble));
+                        put_char('0' + @as(u8, @intCast(nibble)));
                     } else {
-                        put_char('a' + @as(u8, nibble - 10));
+                        put_char('a' + @as(u8, @intCast(nibble - 10)));
                     }
                 }
             },
