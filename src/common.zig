@@ -1,3 +1,5 @@
+pub const PAGE_SIZE = 4096;
+
 pub fn printf(comptime fmt: []const u8, args: anytype) void {
     const args_type = @typeInfo(@TypeOf(args));
     if (args_type != .Struct) {

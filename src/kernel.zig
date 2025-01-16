@@ -5,6 +5,21 @@ const printf = common.printf;
 extern const __stack_top: [*]u8;
 extern const __bss: [*]u8;
 extern const __bss_end: [*]u8;
+extern const __free_ram: [*]u8;
+extern const __free_ram_end: [*]u8;
+var next_page: usize = undefined;
+
+fn alloc_page(n: usize) usize {
+    const addr = next_page;
+    next_page += n * common.PAGE_SIZE;
+
+    if (next_page > @intFromPtr(__free_ram_end)) {
+        panic("out of memory", .{});
+    }
+
+    _ = memset(@ptrFromInt(addr), 0, n);
+    return addr;
+}
 
 const TrapFrame = packed struct {
     ra: usize,
@@ -161,9 +176,14 @@ pub export fn handle_trap(_: *TrapFrame) void {
 pub export fn kernel_main() void {
     _ = memset(__bss, 0, @intFromPtr(__bss_end) - @intFromPtr(__bss));
 
-    write_csr("stvec", @intFromPtr(&kernel_entry));
+    next_page = @intFromPtr(__free_ram);
 
-    asm volatile ("unimp");
+    const paddr0 = alloc_page(2);
+    const paddr1 = alloc_page(1);
+    printf("alloc_page test: paddr0=%x\n", .{paddr0});
+    printf("alloc_page test: paddr1=%x\n", .{paddr1});
+
+    panic("booted!", .{});
 }
 
 pub export fn boot() linksection(".text.boot") callconv(.Naked) void {
