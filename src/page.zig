@@ -27,9 +27,11 @@ pub fn alloc(n: usize) usize {
 
 pub fn map(table1: [*]usize, vaddr: usize, paddr: usize, flgas: usize) void {
     if (vaddr % PAGE_SIZE != 0) {
+        panic("unaligned vaddr=0x%x", .{vaddr});
         return;
     }
     if (paddr % PAGE_SIZE != 0) {
+        panic("unaligned paddr=0x%x", .{paddr});
         return;
     }
 
@@ -42,4 +44,8 @@ pub fn map(table1: [*]usize, vaddr: usize, paddr: usize, flgas: usize) void {
     const vpn0 = (vaddr >> 12) & 0x3ff;
     const table0: [*]usize = @ptrFromInt((table1[vpn1] >> 10) * PAGE_SIZE);
     table0[vpn0] = (paddr / PAGE_SIZE) << 10 | flgas | PAGE_V;
+}
+
+pub fn init() void {
+    next_page = @intFromPtr(&symbol.__free_ram);
 }

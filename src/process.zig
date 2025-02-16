@@ -12,7 +12,7 @@ const ProcessState = enum {
     Runnable,
 };
 
-pub fn init_processes() void {
+pub fn init() void {
     idle_proc = Process.create(0);
     idle_proc.pid = -1;
     current_proc = idle_proc;
@@ -50,7 +50,7 @@ pub const Process = struct {
             const page_table: [*]usize = @ptrFromInt(page.alloc(1));
             var paddr = @intFromPtr(&symbol.__kernel_base);
             while (paddr < @intFromPtr(&symbol.__free_ram_end)) : (paddr += page.PAGE_SIZE) {
-                page.map(page_table, paddr, paddr, page.PAGE_R | page.PAGE_W | page.PAGE_W);
+                page.map(page_table, paddr, paddr, page.PAGE_R | page.PAGE_W | page.PAGE_X);
             }
 
             proc.sp = @intFromPtr(sp);

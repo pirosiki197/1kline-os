@@ -7,8 +7,6 @@ const print = common.print;
 const printf = common.printf;
 const panic = @import("panic.zig").panic;
 
-var next_page: usize = undefined;
-
 const TrapFrame = packed struct {
     ra: usize,
     gp: usize,
@@ -196,13 +194,12 @@ pub export fn kernel_main() void {
 
     write_csr("stvec", @intFromPtr(&kernel_entry));
 
-    proc.init_processes();
+    page.init();
+    proc.init();
 
     proc_a = Process.create(@intFromPtr(&proc_a_entry));
     proc_b = Process.create(@intFromPtr(&proc_b_entry));
     proc_a_entry();
-
-    next_page = @intFromPtr(&symbol.__free_ram);
 
     panic("booted!", .{});
 }
