@@ -1,5 +1,21 @@
 pub const PAGE_SIZE = 4096;
 
+pub fn memset(buf: [*]u8, c: u8, n: usize) [*]u8 {
+    var p = buf;
+    for (0..n) |i| {
+        p[i] = c;
+    }
+    return buf;
+}
+
+pub fn memcpy(dst: [*]u8, src: [*]const u8, n: usize) *anyopaque {
+    var p = dst;
+    for (0..n) |i| {
+        p[i] = src[i];
+    }
+    return dst;
+}
+
 pub fn printf(comptime fmt: []const u8, args: anytype) void {
     const args_type = @typeInfo(@TypeOf(args));
     if (args_type != .Struct) {

@@ -1,28 +1,13 @@
+const symbol = @import("symbol.zig");
 const common = @import("common.zig");
 const proc = @import("process.zig");
 const Process = proc.Process;
+const page = @import("page.zig");
 const print = common.print;
 const printf = common.printf;
 const panic = @import("panic.zig").panic;
 
-extern const __stack_top: anyopaque;
-extern const __bss: anyopaque;
-extern const __bss_end: anyopaque;
-extern const __free_ram: anyopaque;
-extern const __free_ram_end: anyopaque;
 var next_page: usize = undefined;
-
-fn alloc_page(n: usize) usize {
-    const addr = next_page;
-    next_page += n * common.PAGE_SIZE;
-
-    if (next_page > @intFromPtr(&__free_ram_end)) {
-        panic("out of memory: next_page=0x%x __free_ram_end=0x%x", .{ next_page, @intFromPtr(&__free_ram_end) });
-    }
-
-    _ = memset(@ptrFromInt(addr), 0, n);
-    return addr;
-}
 
 const TrapFrame = packed struct {
     ra: usize,
@@ -207,17 +192,17 @@ fn proc_b_entry() void {
 }
 
 pub export fn kernel_main() void {
-    _ = memset(@ptrCast(@constCast(&__bss)), 0, @intFromPtr(&__bss_end) - @intFromPtr(&__bss));
+    _ = memset(@ptrCast(@constCast(&symbol.__bss)), 0, @intFromPtr(&symbol.__bss_end) - @intFromPtr(&symbol.__bss));
 
     write_csr("stvec", @intFromPtr(&kernel_entry));
 
     proc.init_processes();
 
-    proc_a = proc.create_process(@intFromPtr(&proc_a_entry));
-    proc_b = proc.create_process(@intFromPtr(&proc_b_entry));
+    proc_a = Process.create(@intFromPtr(&proc_a_entry));
+    proc_b = Process.create(@intFromPtr(&proc_b_entry));
     proc_a_entry();
 
-    next_page = @intFromPtr(&__free_ram);
+    next_page = @intFromPtr(&symbol.__free_ram);
 
     panic("booted!", .{});
 }
@@ -227,6 +212,6 @@ pub export fn boot() linksection(".text.boot") callconv(.Naked) void {
         \\ mv sp, %[stack_top]
         \\ j kernel_main
         :
-        : [stack_top] "r" (&__stack_top),
+        : [stack_top] "r" (&symbol.__stack_top),
     );
 }
