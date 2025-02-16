@@ -1,5 +1,5 @@
 zig-out/bin/kernel.elf: src/kernel.zig
-	zig build -Doptimize=ReleaseSafe
+	zig build -Doptimize=ReleaseFast
 
 .PHONY: objdump
 objdump:

@@ -1,6 +1,9 @@
 const common = @import("common.zig");
+const proc = @import("process.zig");
+const Process = proc.Process;
 const print = common.print;
 const printf = common.printf;
+const panic = @import("panic.zig").panic;
 
 extern const __stack_top: anyopaque;
 extern const __bss: anyopaque;
@@ -84,14 +87,10 @@ fn memcpy(dst: [*]u8, src: [*]const u8, n: usize) *anyopaque {
     return dst;
 }
 
-fn panic(comptime fmt: []const u8, args: anytype) noreturn {
-    printf("PANIC: " ++ fmt ++ "\n", args);
-    while (true) {}
-}
-
 fn kernel_entry() align(4) callconv(.Naked) void {
     asm volatile (
-        \\ csrw sscratch, sp
+        \\ csrrw sp, sscratch, sp
+        \\
         \\ addi sp, sp, -4 * 31
         \\ sw ra, 4 * 0(sp)
         \\ sw gp, 4 * 1(sp)
@@ -126,6 +125,9 @@ fn kernel_entry() align(4) callconv(.Naked) void {
         \\
         \\ csrr a0, sscratch
         \\ sw a0, 4 * 30(sp)
+        \\
+        \\ addi a0, sp, 4*31
+        \\ csrw sscratch, a0
         \\
         \\ mv a0, sp
         \\ call handle_trap
@@ -173,15 +175,49 @@ pub export fn handle_trap(_: *TrapFrame) void {
     panic("unexpected trap scause=%x, stval=%x, sepc=%x\n", .{ scause, stval, user_pc });
 }
 
+fn delay() void {
+    for (0..1000000) |_| {
+        asm volatile ("nop");
+    }
+}
+
+var proc_a: *Process = undefined;
+var proc_b: *Process = undefined;
+
+fn proc_a_entry() void {
+    printf("starting proc a\n", .{});
+    while (true) {
+        print("A\n");
+        printf("proc a sp=0x%x\n", .{proc_a.sp});
+        printf("proc b sp=0x%x\n", .{proc_b.sp});
+        proc.yield();
+        @call(.never_inline, delay, .{});
+    }
+}
+
+fn proc_b_entry() void {
+    printf("starting proc b\n", .{});
+    while (true) {
+        print("B\n");
+        printf("proc a sp=0x%x\n", .{proc_a.sp});
+        printf("proc b sp=0x%x\n", .{proc_b.sp});
+        proc.yield();
+        @call(.never_inline, delay, .{});
+    }
+}
+
 pub export fn kernel_main() void {
     _ = memset(@ptrCast(@constCast(&__bss)), 0, @intFromPtr(&__bss_end) - @intFromPtr(&__bss));
 
-    next_page = @intFromPtr(&__free_ram);
+    write_csr("stvec", @intFromPtr(&kernel_entry));
 
-    const paddr0 = alloc_page(2);
-    const paddr1 = alloc_page(1);
-    printf("alloc_page test: paddr0=%x\n", .{paddr0});
-    printf("alloc_page test: paddr1=%x\n", .{paddr1});
+    proc.init_processes();
+
+    proc_a = proc.create_process(@intFromPtr(&proc_a_entry));
+    proc_b = proc.create_process(@intFromPtr(&proc_b_entry));
+    proc_a_entry();
+
+    next_page = @intFromPtr(&__free_ram);
 
     panic("booted!", .{});
 }
