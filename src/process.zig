@@ -14,12 +14,17 @@ var idle_proc: *Process = undefined;
 const ProcessState = enum {
     Unused,
     Runnable,
+    Exited,
 };
 
 pub fn init() void {
     idle_proc = Process.create(0, 0);
     idle_proc.pid = -1;
     current_proc = idle_proc;
+}
+
+pub fn current() *Process {
+    return current_proc;
 }
 
 fn user_entry() callconv(.Naked) void {
@@ -88,6 +93,10 @@ pub const Process = struct {
         } else {
             panic("out of processes", .{});
         }
+    }
+
+    pub fn exit(self: *Process) void {
+        self.state = .Exited;
     }
 };
 

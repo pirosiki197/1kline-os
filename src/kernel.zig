@@ -214,6 +214,12 @@ fn handle_syscall(f: *TrapFrame) void {
                 proc.yield();
             }
         },
+        common.SYS_EXIT => {
+            printf("process %d exited\n", .{proc.current().pid});
+            proc.current().exit();
+            proc.yield();
+            panic("unreachable", .{});
+        },
         else => panic("unexpected syscall a3=0x%x\n", .{f.a3}),
     }
 }
@@ -235,7 +241,8 @@ pub export fn kernel_main() void {
     _ = Process.create(@intFromPtr(&symbol._binary_shell_bin_start), @intFromPtr(&symbol._binary_shell_bin_size));
 
     proc.yield();
-    panic("booted!", .{});
+
+    panic("switched to idle process", .{});
 }
 
 pub export fn boot() linksection(".text.boot") callconv(.Naked) void {

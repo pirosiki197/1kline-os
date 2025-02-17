@@ -4,6 +4,7 @@ const common = @import("common.zig");
 const printf = common.printf;
 const print = common.print;
 const put_char = common.put_char;
+const exit = common.exit;
 
 pub export fn main() void {
     while (true) {
@@ -29,6 +30,8 @@ pub export fn main() void {
 
             if (std.mem.eql(u8, cmdline, "hello")) {
                 print("Hello, world from shell!\n");
+            } else if (std.mem.eql(u8, cmdline, "exit")) {
+                exit();
             } else {
                 printf("Unknown command: %s\n", .{cmdline});
             }
