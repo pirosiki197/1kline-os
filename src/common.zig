@@ -3,7 +3,8 @@ pub const PAGE_SIZE = 4096;
 pub const SYS_PUTCHAR = 1;
 pub const SYS_GETCHAR = 2;
 
-extern fn put_char(c: u8) void;
+pub extern fn put_char(c: u8) void;
+pub extern fn get_char() isize;
 
 pub fn memset(buf: [*]u8, c: u8, n: usize) [*]u8 {
     var p = buf;
