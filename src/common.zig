@@ -1,5 +1,7 @@
 pub const PAGE_SIZE = 4096;
 
+pub const SYS_PUTCHAR = 1;
+
 pub fn memset(buf: [*]u8, c: u8, n: usize) [*]u8 {
     var p = buf;
     for (0..n) |i| {
@@ -113,6 +115,6 @@ fn sbi_call(arg0: usize, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg
     return SbiRet{ .err = err, .value = value };
 }
 
-fn put_char(c: u8) void {
+pub fn put_char(c: u8) void {
     _ = sbi_call(c, 0, 0, 0, 0, 0, 0, 1);
 }

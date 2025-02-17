@@ -1,3 +1,5 @@
+const common = @import("common.zig");
+
 pub export fn main() void {
-    while (true) {}
+    common.print("Hello, world!\n");
 }

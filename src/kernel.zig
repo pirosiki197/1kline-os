@@ -7,6 +7,8 @@ const print = common.print;
 const printf = common.printf;
 const panic = @import("panic.zig").panic;
 
+const SCAUSE_ECALL = 8;
+
 const TrapFrame = packed struct {
     ra: usize,
     gp: usize,
@@ -150,12 +152,26 @@ fn kernel_entry() align(4) callconv(.Naked) void {
     );
 }
 
-pub export fn handle_trap(_: *TrapFrame) void {
+pub export fn handle_trap(f: *TrapFrame) void {
     const scause = read_csr("scause");
     const stval = read_csr("stval");
-    const user_pc = read_csr("sepc");
+    var user_pc = read_csr("sepc");
 
-    panic("unexpected trap scause=%x, stval=%x, sepc=%x\n", .{ scause, stval, user_pc });
+    if (scause == SCAUSE_ECALL) {
+        handle_syscall(f);
+        user_pc += 4;
+    } else {
+        panic("unexpected trap scause=%x, stval=%x, sepc=%x\n", .{ scause, stval, user_pc });
+    }
+
+    write_csr("sepc", user_pc);
+}
+
+fn handle_syscall(f: *TrapFrame) void {
+    switch (f.a3) {
+        common.SYS_PUTCHAR => common.put_char(@intCast(f.a0)),
+        else => panic("unexpected syscall a3=0x%x\n", .{f.a3}),
+    }
 }
 
 fn delay() void {
