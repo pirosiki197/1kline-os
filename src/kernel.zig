@@ -72,6 +72,40 @@ fn memcpy(dst: [*]u8, src: [*]const u8, n: usize) *anyopaque {
     return dst;
 }
 
+export fn put_char(c: u8) void {
+    _ = sbi_call(c, 0, 0, 0, 0, 0, 0, 1);
+}
+
+export fn get_char() isize {
+    const ret = sbi_call(0, 0, 0, 0, 0, 0, 0, 2);
+    return ret.err;
+}
+
+const SbiRet = struct {
+    err: isize,
+    value: isize,
+};
+
+fn sbi_call(arg0: usize, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg5: usize, fid: usize, eid: usize) SbiRet {
+    var err: isize = 0;
+    var value: isize = 0;
+    _ = asm volatile (
+        \\ ecall
+        : [err] "={a0}" (err),
+          [value] "={a1}" (value),
+        : [arg0] "{a0}" (arg0),
+          [arg1] "{a1}" (arg1),
+          [arg2] "{a2}" (arg2),
+          [arg3] "{a3}" (arg3),
+          [arg4] "{a4}" (arg4),
+          [arg5] "{a5}" (arg5),
+          [fid] "{a6}" (fid),
+          [eid] "{a7}" (eid),
+        : "memory"
+    );
+    return SbiRet{ .err = err, .value = value };
+}
+
 fn kernel_entry() align(4) callconv(.Naked) void {
     asm volatile (
         \\ csrrw sp, sscratch, sp
@@ -169,7 +203,17 @@ pub export fn handle_trap(f: *TrapFrame) void {
 
 fn handle_syscall(f: *TrapFrame) void {
     switch (f.a3) {
-        common.SYS_PUTCHAR => common.put_char(@intCast(f.a0)),
+        common.SYS_PUTCHAR => put_char(@intCast(f.a0)),
+        common.SYS_GETCHAR => {
+            while (true) {
+                const ch = get_char();
+                if (ch >= 0) {
+                    f.a0 = @intCast(ch);
+                    break;
+                }
+                proc.yield();
+            }
+        },
         else => panic("unexpected syscall a3=0x%x\n", .{f.a3}),
     }
 }
