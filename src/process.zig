@@ -24,8 +24,8 @@ pub fn init() void {
 
 fn user_entry() callconv(.Naked) void {
     asm volatile (
-        \\ csrw sepc, %[sepc],
-        \\ csrw sstatus, %[sstatus],
+        \\ csrw sepc, %[sepc]
+        \\ csrw sstatus, %[sstatus]
         \\ sret
         :
         : [sepc] "r" (USER_BASE),
