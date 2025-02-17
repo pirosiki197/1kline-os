@@ -2,8 +2,6 @@ const common = @import("common.zig");
 const symbol = @import("symbol.zig");
 const panic = @import("panic.zig").panic;
 
-pub const PAGE_SIZE = 4096;
-
 pub const SATP_SV32 = 1 << 31;
 pub const PAGE_V = 1 << 0;
 pub const PAGE_R = 1 << 1;
@@ -15,7 +13,7 @@ var next_page: usize = undefined;
 
 pub fn alloc(n: usize) usize {
     const addr = next_page;
-    next_page += n * PAGE_SIZE;
+    next_page += n * common.PAGE_SIZE;
 
     if (next_page > @intFromPtr(&symbol.__free_ram_end)) {
         panic("out of memory: next_page=0x%x __free_ram_end=0x%x", .{ next_page, @intFromPtr(&symbol.__free_ram_end) });
@@ -26,11 +24,11 @@ pub fn alloc(n: usize) usize {
 }
 
 pub fn map(table1: [*]usize, vaddr: usize, paddr: usize, flgas: usize) void {
-    if (vaddr % PAGE_SIZE != 0) {
+    if (vaddr % common.PAGE_SIZE != 0) {
         panic("unaligned vaddr=0x%x", .{vaddr});
         return;
     }
-    if (paddr % PAGE_SIZE != 0) {
+    if (paddr % common.PAGE_SIZE != 0) {
         panic("unaligned paddr=0x%x", .{paddr});
         return;
     }
@@ -38,12 +36,12 @@ pub fn map(table1: [*]usize, vaddr: usize, paddr: usize, flgas: usize) void {
     const vpn1 = (vaddr >> 22) & 0x3ff;
     if ((table1[vpn1] & PAGE_V) == 0) {
         const pt_paddr = alloc(1);
-        table1[vpn1] = ((pt_paddr / PAGE_SIZE) << 10) | PAGE_V;
+        table1[vpn1] = ((pt_paddr / common.PAGE_SIZE) << 10) | PAGE_V;
     }
 
     const vpn0 = (vaddr >> 12) & 0x3ff;
-    const table0: [*]usize = @ptrFromInt((table1[vpn1] >> 10) * PAGE_SIZE);
-    table0[vpn0] = (paddr / PAGE_SIZE) << 10 | flgas | PAGE_V;
+    const table0: [*]usize = @ptrFromInt((table1[vpn1] >> 10) * common.PAGE_SIZE);
+    table0[vpn0] = (paddr / common.PAGE_SIZE) << 10 | flgas | PAGE_V;
 }
 
 pub fn init() void {

@@ -1,8 +1,11 @@
 const panic = @import("panic.zig").panic;
 const symbol = @import("symbol.zig");
 const page = @import("page.zig");
+const common = @import("common.zig");
 
 const PROCS_MAX = 8;
+
+const USER_BASE = 0x1000000;
 
 var current_proc: *Process = undefined;
 var idle_proc: *Process = undefined;
@@ -13,9 +16,13 @@ const ProcessState = enum {
 };
 
 pub fn init() void {
-    idle_proc = Process.create(0);
+    idle_proc = Process.create(0, 0);
     idle_proc.pid = -1;
     current_proc = idle_proc;
+}
+
+fn user_entry() void {
+    panic("not implemented\n", .{});
 }
 
 pub const Process = struct {
@@ -25,7 +32,7 @@ pub const Process = struct {
     page_table: [*]usize = undefined,
     stack: [8192]u8 = undefined,
 
-    pub fn create(pc: usize) *Process {
+    pub fn create(image_addr: usize, image_size: usize) *Process {
         var maybe_proc: ?*Process = null;
         for (0..PROCS_MAX) |i| {
             if (processes[i].state == .Unused) {
@@ -45,12 +52,25 @@ pub const Process = struct {
             }
             // ra
             sp -= 1;
-            sp[0] = pc;
+            sp[0] = @intFromPtr(&user_entry);
 
+            // map kernel memory
             const page_table: [*]usize = @ptrFromInt(page.alloc(1));
             var paddr = @intFromPtr(&symbol.__kernel_base);
-            while (paddr < @intFromPtr(&symbol.__free_ram_end)) : (paddr += page.PAGE_SIZE) {
+            while (paddr < @intFromPtr(&symbol.__free_ram_end)) : (paddr += common.PAGE_SIZE) {
                 page.map(page_table, paddr, paddr, page.PAGE_R | page.PAGE_W | page.PAGE_X);
+            }
+
+            // map user memory
+            var off: usize = 0;
+            while (off < image_size) : (off += common.PAGE_SIZE) {
+                const dst_page = page.alloc(1);
+                const remaining = image_size - off;
+                const copy_size = if (common.PAGE_SIZE <= remaining) common.PAGE_SIZE else remaining;
+
+                _ = common.memcpy(@ptrFromInt(dst_page), @ptrFromInt(image_addr + off), copy_size);
+
+                page.map(page_table, USER_BASE, dst_page, page.PAGE_U | page.PAGE_R | page.PAGE_W | page.PAGE_X);
             }
 
             proc.sp = @intFromPtr(sp);
@@ -122,7 +142,7 @@ pub fn yield() void {
         \\ sfence.vma
         \\ csrw sscratch, %[sscratch]
         :
-        : [satp] "r" (page.SATP_SV32 | @intFromPtr(next.page_table) / page.PAGE_SIZE),
+        : [satp] "r" (page.SATP_SV32 | @intFromPtr(next.page_table) / common.PAGE_SIZE),
           [sscratch] "r" (@intFromPtr(&next.stack) + next.stack.len),
     );
 

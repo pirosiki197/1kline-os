@@ -164,31 +164,6 @@ fn delay() void {
     }
 }
 
-var proc_a: *Process = undefined;
-var proc_b: *Process = undefined;
-
-fn proc_a_entry() void {
-    printf("starting proc a\n", .{});
-    while (true) {
-        print("A\n");
-        printf("proc a sp=0x%x\n", .{proc_a.sp});
-        printf("proc b sp=0x%x\n", .{proc_b.sp});
-        proc.yield();
-        @call(.never_inline, delay, .{});
-    }
-}
-
-fn proc_b_entry() void {
-    printf("starting proc b\n", .{});
-    while (true) {
-        print("B\n");
-        printf("proc a sp=0x%x\n", .{proc_a.sp});
-        printf("proc b sp=0x%x\n", .{proc_b.sp});
-        proc.yield();
-        @call(.never_inline, delay, .{});
-    }
-}
-
 pub export fn kernel_main() void {
     _ = memset(@ptrCast(@constCast(&symbol.__bss)), 0, @intFromPtr(&symbol.__bss_end) - @intFromPtr(&symbol.__bss));
 
@@ -197,10 +172,9 @@ pub export fn kernel_main() void {
     page.init();
     proc.init();
 
-    proc_a = Process.create(@intFromPtr(&proc_a_entry));
-    proc_b = Process.create(@intFromPtr(&proc_b_entry));
-    proc_a_entry();
+    _ = Process.create(@intFromPtr(&symbol._binary_shell_bin_start), @intFromPtr(&symbol._binary_shell_bin_size));
 
+    proc.yield();
     panic("booted!", .{});
 }
 
