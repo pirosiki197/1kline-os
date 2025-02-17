@@ -6,6 +6,7 @@ const common = @import("common.zig");
 const PROCS_MAX = 8;
 
 const USER_BASE = 0x1000000;
+const SSTATUS_SPIE = 1 << 5;
 
 var current_proc: *Process = undefined;
 var idle_proc: *Process = undefined;
@@ -21,8 +22,15 @@ pub fn init() void {
     current_proc = idle_proc;
 }
 
-fn user_entry() void {
-    panic("not implemented\n", .{});
+fn user_entry() callconv(.Naked) void {
+    asm volatile (
+        \\ csrw sepc, %[sepc],
+        \\ csrw sstatus, %[sstatus],
+        \\ sret
+        :
+        : [sepc] "r" (USER_BASE),
+          [sstatus] "r" (SSTATUS_SPIE),
+    );
 }
 
 pub const Process = struct {
@@ -70,7 +78,7 @@ pub const Process = struct {
 
                 _ = common.memcpy(@ptrFromInt(dst_page), @ptrFromInt(image_addr + off), copy_size);
 
-                page.map(page_table, USER_BASE, dst_page, page.PAGE_U | page.PAGE_R | page.PAGE_W | page.PAGE_X);
+                page.map(page_table, USER_BASE + off, dst_page, page.PAGE_U | page.PAGE_R | page.PAGE_W | page.PAGE_X);
             }
 
             proc.sp = @intFromPtr(sp);

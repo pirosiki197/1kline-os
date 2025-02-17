@@ -91,7 +91,7 @@ pub fn build(b: *std.Build) void {
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).
-    b.getInstallStep().dependOn(&shell_bin_o_cmd.step);
+    b.getInstallStep().dependOn(&b.addInstallBinFile(shell_bin, "shell.bin").step);
     b.getInstallStep().dependOn(&b.addInstallBinFile(shell_bin_o, "shell.bin.o").step);
     b.installArtifact(exe);
 
