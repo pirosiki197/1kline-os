@@ -1,6 +1,9 @@
+const std = @import("std");
+
 const symbol = @import("symbol.zig");
 const common = @import("common.zig");
 const proc = @import("process.zig");
+const virtio = @import("virtio.zig");
 const Process = proc.Process;
 const page = @import("page.zig");
 const print = common.print;
@@ -236,7 +239,14 @@ pub export fn kernel_main() void {
     write_csr("stvec", @intFromPtr(&kernel_entry));
 
     page.init();
+    virtio.init();
     proc.init();
+
+    var buf: [virtio.SECTOR_SIZE]u8 = undefined;
+    virtio.read_write_disk(&buf, 0, false);
+    printf("first sector: %s\n", .{buf});
+    std.mem.copyForwards(u8, &buf, "Hello from kernel!\n");
+    virtio.read_write_disk(&buf, 0, true);
 
     _ = Process.create(@intFromPtr(&symbol._binary_shell_bin_start), @intFromPtr(&symbol._binary_shell_bin_size));
 

@@ -2,6 +2,7 @@ const panic = @import("panic.zig").panic;
 const symbol = @import("symbol.zig");
 const page = @import("page.zig");
 const common = @import("common.zig");
+const virtio = @import("virtio.zig");
 
 const PROCS_MAX = 8;
 
@@ -85,6 +86,8 @@ pub const Process = struct {
 
                 page.map(page_table, USER_BASE + off, dst_page, page.PAGE_U | page.PAGE_R | page.PAGE_W | page.PAGE_X);
             }
+
+            page.map(page_table, virtio.VIRTIO_BLK_PADDR, virtio.VIRTIO_BLK_PADDR, page.PAGE_R | page.PAGE_W);
 
             proc.sp = @intFromPtr(sp);
             proc.page_table = page_table;
