@@ -117,6 +117,10 @@ pub fn flush() void {
         _ = common.memcpy(@ptrCast(&header.data), &file.data, file.size);
         off += common.align_up(@sizeOf(TarHeader) + file.size, SECTOR_SIZE);
     }
+
+    for (0..@sizeOf(@TypeOf(disk)) / SECTOR_SIZE) |sector| {
+        virtio.read_write_disk(@ptrCast(&disk[sector * SECTOR_SIZE]), sector, true);
+    }
 }
 
 pub fn lookup(filename: [*:0]const u8) ?*File {
