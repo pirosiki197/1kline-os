@@ -120,12 +120,12 @@ pub fn init() void {
     blk_capacity = reg_read64(VIRTIO_REG_DEVICE_CONFIG + 0) * SECTOR_SIZE;
     printf("virtio-blk: capacity is %d bytes\n", .{blk_capacity});
 
-    blk_req_paddr = page.alloc(align_up(@sizeOf(virtio_blk_req), PAGE_SIZE) / PAGE_SIZE);
+    blk_req_paddr = page.alloc(common.align_up(@sizeOf(virtio_blk_req), PAGE_SIZE) / PAGE_SIZE);
     blk_req = @ptrFromInt(blk_req_paddr);
 }
 
 fn virtq_init(index: usize) *virtio_virtq {
-    const virtq_paddr = page.alloc(align_up(@sizeOf(virtio_virtq), PAGE_SIZE) / PAGE_SIZE);
+    const virtq_paddr = page.alloc(common.align_up(@sizeOf(virtio_virtq), PAGE_SIZE) / PAGE_SIZE);
     const vq: *virtio_virtq = @ptrFromInt(virtq_paddr);
     vq.queue_index = index;
     vq.used_index = &vq.used.index;
@@ -195,8 +195,4 @@ pub fn read_write_disk(buf: [*]u8, sector: usize, is_write: bool) void {
     if (!is_write) {
         _ = common.memcpy(buf, &blk_req.data, SECTOR_SIZE);
     }
-}
-
-fn align_up(n: usize, v: usize) usize {
-    return (n + v - 1) & ~(v - 1);
 }

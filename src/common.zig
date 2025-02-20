@@ -95,3 +95,7 @@ pub fn print(s: []const u8) void {
         put_char(c);
     }
 }
+
+pub fn align_up(n: usize, v: usize) usize {
+    return (n + v - 1) & ~(v - 1);
+}
