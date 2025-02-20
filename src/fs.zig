@@ -73,10 +73,9 @@ pub fn init() void {
         const file = &files[i];
         file.in_use = true;
         std.mem.copyForwards(u8, &file.name, &header.name);
-        _ = common.memcpy(&file.data, header.data, filesz);
+        _ = common.memcpy(&file.data, @ptrCast(&header.data), filesz);
         file.size = filesz;
         printf("file: %s, size=%d\n", .{ &file.name, file.size });
-
         off += common.align_up(@sizeOf(TarHeader) + filesz, SECTOR_SIZE);
     }
 }
@@ -115,7 +114,7 @@ pub fn flush() void {
             checksum /= 8;
         }
 
-        _ = common.memcpy(header.data, &file.data, file.size);
+        _ = common.memcpy(@ptrCast(&header.data), &file.data, file.size);
         off += common.align_up(@sizeOf(TarHeader) + file.size, SECTOR_SIZE);
     }
 }
