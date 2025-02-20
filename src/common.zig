@@ -1,12 +1,18 @@
 pub const PAGE_SIZE = 4096;
 
+pub const SECTOR_SIZE = 512;
+
 pub const SYS_PUTCHAR = 1;
 pub const SYS_GETCHAR = 2;
 pub const SYS_EXIT = 3;
+pub const SYS_READFILE = 4;
+pub const SYS_WRITEFILE = 5;
 
 pub extern fn put_char(c: u8) void;
 pub extern fn get_char() isize;
 pub extern fn exit() noreturn;
+pub extern fn readfile(filename: [*:0]const u8, buf: [*]u8, len: usize) isize;
+pub extern fn writefile(filename: [*:0]const u8, buf: [*]const u8, len: usize) isize;
 
 pub fn memset(buf: [*]u8, c: u8, n: usize) [*]u8 {
     var p = buf;
@@ -45,6 +51,9 @@ pub fn printf(comptime fmt: []const u8, args: anytype) void {
             's' => {
                 const field = @field(args, fields_info[field_idx].name);
                 for (field) |c| {
+                    if (c == 0) {
+                        break;
+                    }
                     put_char(c);
                 }
                 field_idx += 1;
@@ -94,6 +103,14 @@ pub fn print(s: []const u8) void {
     for (s) |c| {
         put_char(c);
     }
+}
+
+pub fn cstrcpy(dst: [*]u8, src: []const u8) void {
+    var i: usize = 0;
+    while (src[i] != 0) : (i += 1) {
+        dst[i] = src[i];
+    }
+    dst[i] = 0;
 }
 
 pub fn align_up(n: usize, v: usize) usize {

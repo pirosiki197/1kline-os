@@ -8,6 +8,7 @@ const PROCS_MAX = 8;
 
 const USER_BASE = 0x1000000;
 const SSTATUS_SPIE = 1 << 5;
+const SSTATUS_SUM = 1 << 18;
 
 var current_proc: *Process = undefined;
 var idle_proc: *Process = undefined;
@@ -35,7 +36,7 @@ fn user_entry() callconv(.Naked) void {
         \\ sret
         :
         : [sepc] "r" (USER_BASE),
-          [sstatus] "r" (SSTATUS_SPIE),
+          [sstatus] "r" (SSTATUS_SPIE | SSTATUS_SUM),
     );
 }
 

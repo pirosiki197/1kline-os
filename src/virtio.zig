@@ -4,8 +4,8 @@ const panic = @import("panic.zig").panic;
 const printf = common.printf;
 
 const PAGE_SIZE = common.PAGE_SIZE;
+const SECTOR_SIZE = common.SECTOR_SIZE;
 
-pub const SECTOR_SIZE = 512;
 pub const VIRTQ_ENTRY_NUM = 16;
 pub const VIRTIO_DEVICE_BLK = 2;
 pub const VIRTIO_BLK_PADDR = 0x10001000;

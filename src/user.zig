@@ -36,3 +36,11 @@ export fn exit() noreturn {
     _ = syscall(common.SYS_EXIT, 0, 0, 0);
     while (true) {}
 }
+
+export fn readfile(filename: [*:0]const u8, buf: [*]u8, len: usize) isize {
+    return syscall(common.SYS_READFILE, @intFromPtr(filename), @intFromPtr(buf), len);
+}
+
+export fn writefile(filename: [*:0]const u8, buf: [*]const u8, len: usize) isize {
+    return syscall(common.SYS_WRITEFILE, @intFromPtr(filename), @intFromPtr(buf), len);
+}

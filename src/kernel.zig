@@ -6,84 +6,10 @@ const proc = @import("process.zig");
 const virtio = @import("virtio.zig");
 const Process = proc.Process;
 const page = @import("page.zig");
+const fs = @import("fs.zig");
 const print = common.print;
 const printf = common.printf;
 const panic = @import("panic.zig").panic;
-
-const TarHeader = extern struct {
-    name: [100]u8 align(1),
-    mode: [8]u8 align(1),
-    uid: [8]u8 align(1),
-    gid: [8]u8 align(1),
-    size: [12]u8 align(1),
-    mtime: [12]u8 align(1),
-    checksum: [8]u8 align(1),
-    type_: u8 align(1),
-    linkname: [100]u8 align(1),
-    magic: [6]u8 align(1),
-    version: [2]u8 align(1),
-    uname: [32]u8 align(1),
-    gname: [32]u8 align(1),
-    devmajor: [8]u8 align(1),
-    devminor: [8]u8 align(1),
-    prefix: [155]u8 align(1),
-    padding: [12]u8 align(1),
-    data: [*]u8 align(1),
-};
-
-const File = struct {
-    in_use: bool,
-    name: [100]u8,
-    data: [1024]u8,
-    size: usize,
-};
-
-const FILES_MAX = 2;
-const DISK_MAX_SIZE = common.align_up(@sizeOf(File) * FILES_MAX, virtio.SECTOR_SIZE);
-
-var files: [FILES_MAX]File = undefined;
-var disk: [DISK_MAX_SIZE]u8 = undefined;
-
-fn oct2int(oct: []const u8) usize {
-    var dec: usize = 0;
-    for (oct) |c| {
-        if (c < '0' or c > '7') {
-            break;
-        }
-        dec = dec * 8 + (c - '0');
-    }
-    return dec;
-}
-
-fn fs_init() void {
-    const span = std.mem.span;
-
-    for (0..@sizeOf(@TypeOf(disk)) / virtio.SECTOR_SIZE) |sector| {
-        virtio.read_write_disk(@ptrCast(&disk[sector * virtio.SECTOR_SIZE]), sector, false);
-    }
-
-    var off: usize = 0;
-    for (0..FILES_MAX) |i| {
-        const header: *TarHeader = @ptrCast(&disk[off]);
-        if (header.name[0] == 0) {
-            break;
-        }
-
-        if (std.mem.orderZ(u8, span(@as([*:0]u8, @ptrCast(&header.magic))), "ustar") != .eq) {
-            panic("invalid tar header magic: \"%s\"", .{header.magic});
-        }
-
-        const filesz = oct2int(&header.size);
-        const file = &files[i];
-        file.in_use = true;
-        std.mem.copyForwards(u8, &file.name, &header.name);
-        _ = common.memcpy(&file.data, header.data, filesz);
-        file.size = filesz;
-        printf("file: %s, size=%d\n", .{ span(@as([*:0]u8, @ptrCast(&file.name))), file.size });
-
-        off += common.align_up(@sizeOf(TarHeader) + filesz, virtio.SECTOR_SIZE);
-    }
-}
 
 const SCAUSE_ECALL = 8;
 
@@ -298,6 +224,30 @@ fn handle_syscall(f: *TrapFrame) void {
             proc.yield();
             panic("unreachable", .{});
         },
+        common.SYS_READFILE, common.SYS_WRITEFILE => {
+            const filename: [*:0]const u8 = @ptrFromInt(f.a0);
+            const buf: [*]u8 = @ptrFromInt(f.a1);
+            var len = f.a2;
+            const file: *fs.File = fs.lookup(filename) orelse {
+                printf("file not found: %s\n", .{std.mem.span(filename)});
+                f.a0 = std.math.maxInt(usize);
+                return;
+            };
+
+            if (len > @sizeOf(@TypeOf(file.data))) {
+                len = file.size;
+            }
+
+            if (f.a3 == common.SYS_WRITEFILE) {
+                _ = common.memcpy(&file.data, buf, len);
+                file.size = len;
+                fs.flush();
+            } else {
+                _ = common.memcpy(buf, &file.data, len);
+            }
+
+            f.a0 = len;
+        },
         else => panic("unexpected syscall a3=0x%x\n", .{f.a3}),
     }
 }
@@ -315,14 +265,8 @@ pub export fn kernel_main() void {
 
     page.init();
     virtio.init();
-    fs_init();
+    fs.init();
     proc.init();
-
-    var buf: [virtio.SECTOR_SIZE]u8 = undefined;
-    virtio.read_write_disk(&buf, 0, false);
-    printf("first sector: %s\n", .{buf});
-    std.mem.copyForwards(u8, &buf, "Hello from kernel!\n");
-    virtio.read_write_disk(&buf, 0, true);
 
     _ = Process.create(@intFromPtr(&symbol._binary_shell_bin_start), @intFromPtr(&symbol._binary_shell_bin_size));
 

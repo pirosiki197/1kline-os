@@ -32,6 +32,16 @@ pub export fn main() void {
                 print("Hello, world from shell!\n");
             } else if (std.mem.eql(u8, cmdline, "exit")) {
                 exit();
+            } else if (std.mem.eql(u8, cmdline, "readfile")) {
+                var read_buf: [128]u8 = undefined;
+                const len = common.readfile("hello.txt", &read_buf, @sizeOf(@TypeOf(read_buf)));
+                if (len == -1) {
+                    print("failed to read file\n");
+                } else {
+                    printf("%s\n", .{read_buf[0..@intCast(len)]});
+                }
+            } else if (std.mem.eql(u8, cmdline, "writefile")) {
+                _ = common.writefile("hello.txt", "Hello, from shell!\n", 19);
             } else {
                 printf("Unknown command: %s\n", .{cmdline});
             }
