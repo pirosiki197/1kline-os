@@ -31,45 +31,45 @@ pub const VIRTQ_AVAIL_F_NO_INTERRUPT = 1;
 pub const VIRTIO_BLK_T_IN = 0;
 pub const VIRTIO_BLK_T_OUT = 1;
 
-const virtq_desc = packed struct {
-    addr: u64,
-    len: u32,
-    flags: u16,
-    next: u16,
+const virtq_desc = extern struct {
+    addr: u64 align(1),
+    len: u32 align(1),
+    flags: u16 align(1),
+    next: u16 align(1),
 };
 
 const virtq_avail = extern struct {
-    flags: u16,
-    index: u16,
-    ring: [VIRTQ_ENTRY_NUM]u16,
+    flags: u16 align(1),
+    index: u16 align(1),
+    ring: [VIRTQ_ENTRY_NUM]u16 align(1),
 };
 
-const virtq_used_elem = packed struct {
-    id: u32,
-    len: u32,
+const virtq_used_elem = extern struct {
+    id: u32 align(1),
+    len: u32 align(1),
 };
 
 const virtq_used = extern struct {
-    flags: u16,
-    index: u16,
+    flags: u16 align(1),
+    index: u16 align(1),
     ring: [VIRTQ_ENTRY_NUM]virtq_used_elem align(1),
 };
 
 const virtio_virtq = extern struct {
-    descs: [VIRTQ_ENTRY_NUM]virtq_desc,
-    avail: virtq_avail,
-    used: virtq_used align(common.PAGE_SIZE),
-    queue_index: usize,
-    used_index: *volatile u16,
-    last_used_index: u16,
+    descs: [VIRTQ_ENTRY_NUM]virtq_desc align(1),
+    avail: virtq_avail align(1),
+    used: virtq_used align(PAGE_SIZE),
+    queue_index: usize align(1),
+    used_index: *volatile u16 align(1),
+    last_used_index: u16 align(1),
 };
 
 const virtio_blk_req = extern struct {
-    type_: u32,
-    reserved: u32,
-    sector: u64,
-    data: [512]u8,
-    status: u8,
+    type_: u32 align(1),
+    reserved: u32 align(1),
+    sector: u64 align(1),
+    data: [512]u8 align(1),
+    status: u8 align(1),
 };
 
 fn reg_read32(offset: usize) u32 {
@@ -173,9 +173,9 @@ pub fn read_write_disk(buf: [*]u8, sector: usize, is_write: bool) void {
     vq.descs[1].addr = blk_req_paddr + @offsetOf(virtio_blk_req, "data");
     vq.descs[1].len = SECTOR_SIZE;
     if (is_write) {
-        vq.descs[1].flags = VIRTQ_DESC_F_NEXT | VIRTQ_DESC_F_WRITE;
-    } else {
         vq.descs[1].flags = VIRTQ_DESC_F_NEXT;
+    } else {
+        vq.descs[1].flags = VIRTQ_DESC_F_NEXT | VIRTQ_DESC_F_WRITE;
     }
     vq.descs[1].next = 2;
 
