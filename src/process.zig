@@ -41,11 +41,19 @@ fn user_entry() callconv(.Naked) void {
 }
 
 pub const Process = struct {
-    pid: i32 = 0,
-    state: ProcessState = .Unused,
-    sp: usize = 0, // stack pointer at the time of the last context switch
-    page_table: [*]usize = undefined,
-    stack: [8192]u8 = undefined,
+    pid: i32,
+    state: ProcessState,
+    sp: usize, // stack pointer at the time of the last context switch
+    page_table: [*]usize,
+    stack: [8192]u8,
+
+    const empty: Process = .{
+        .pid = 0,
+        .state = .Unused,
+        .sp = 0,
+        .page_table = undefined,
+        .stack = undefined,
+    };
 
     pub fn create(image_addr: usize, image_size: usize) *Process {
         var maybe_proc: ?*Process = null;
@@ -104,7 +112,7 @@ pub const Process = struct {
     }
 };
 
-var processes: [PROCS_MAX]Process = .{.{}} ** PROCS_MAX;
+var processes: [PROCS_MAX]Process = @splat(.empty);
 
 inline fn switch_context(prev_sp: *usize, next_sp: *usize) void {
     asm volatile (

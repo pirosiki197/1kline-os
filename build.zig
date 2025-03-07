@@ -12,6 +12,7 @@ pub fn build(b: *std.Build) void {
 
     var disable_features = FeatureSet.empty;
     disable_features.addFeature(@intFromEnum(std.Target.riscv.Feature.d));
+    disable_features.addFeature(@intFromEnum(std.Target.riscv.Feature.f));
     const target = b.resolveTargetQuery(.{
         .os_tag = .freestanding,
         .cpu_arch = .riscv32,

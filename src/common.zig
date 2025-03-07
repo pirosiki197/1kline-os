@@ -32,10 +32,10 @@ pub fn memcpy(dst: [*]u8, src: [*]const u8, n: usize) *anyopaque {
 
 pub fn printf(comptime fmt: []const u8, args: anytype) void {
     const args_type = @typeInfo(@TypeOf(args));
-    if (args_type != .Struct) {
+    if (args_type != .@"struct") {
         @compileError("print() requires a struct argument");
     }
-    const fields_info = args_type.Struct.fields;
+    const fields_info = args_type.@"struct".fields;
 
     comptime var idx: usize = 0;
     comptime var field_idx: usize = 0;
