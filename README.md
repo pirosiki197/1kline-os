@@ -2,7 +2,7 @@
 
 https://operating-system-in-1000-lines.vercel.app/ja/
 
-Zig v0.13.0 でビルドできます。
+Zig v0.14.0 でビルドできます。
 
 ## build
 ```
