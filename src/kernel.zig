@@ -60,22 +60,6 @@ inline fn write_csr(comptime reg: []const u8, value: u32) void {
     );
 }
 
-fn memset(buf: [*]u8, c: u8, n: usize) [*]u8 {
-    var p = buf;
-    for (0..n) |i| {
-        p[i] = c;
-    }
-    return buf;
-}
-
-fn memcpy(dst: [*]u8, src: [*]const u8, n: usize) *anyopaque {
-    var p = dst;
-    for (0..n) |i| {
-        p[i] = src[i];
-    }
-    return dst;
-}
-
 export fn put_char(c: u8) void {
     _ = sbi_call(c, 0, 0, 0, 0, 0, 0, 1);
 }
@@ -259,7 +243,7 @@ fn delay() void {
 }
 
 pub export fn kernel_main() void {
-    _ = memset(@ptrCast(@constCast(&symbol.__bss)), 0, @intFromPtr(&symbol.__bss_end) - @intFromPtr(&symbol.__bss));
+    _ = common.memset(@ptrCast(@constCast(&symbol.__bss)), 0, @intFromPtr(&symbol.__bss_end) - @intFromPtr(&symbol.__bss));
 
     write_csr("stvec", @intFromPtr(&kernel_entry));
 
