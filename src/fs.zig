@@ -29,7 +29,7 @@ const TarHeader = extern struct {
 
 pub const File = struct {
     in_use: bool,
-    name: [100]u8,
+    name: [100:0]u8,
     data: [1024]u8,
     size: usize,
 };
@@ -52,8 +52,6 @@ fn oct2int(oct: []const u8) usize {
 }
 
 pub fn init() void {
-    const span = std.mem.span;
-
     for (0..@sizeOf(@TypeOf(disk)) / SECTOR_SIZE) |sector| {
         virtio.read_write_disk(@ptrCast(&disk[sector * SECTOR_SIZE]), sector, false);
     }
@@ -65,7 +63,7 @@ pub fn init() void {
             break;
         }
 
-        if (std.mem.orderZ(u8, span(@as([*:0]u8, @ptrCast(&header.magic))), "ustar") != .eq) {
+        if (std.mem.orderZ(u8, @ptrCast(&header.magic), "ustar") != .eq) {
             panic("invalid tar header magic: \"%s\"", .{header.magic});
         }
 
@@ -125,7 +123,7 @@ pub fn flush() void {
 
 pub fn lookup(filename: [*:0]const u8) ?*File {
     for (&files) |*file| {
-        if (std.mem.orderZ(u8, filename, std.mem.span(@as([*:0]u8, @ptrCast(&file.name)))) == .eq) {
+        if (std.mem.orderZ(u8, filename, &file.name) == .eq) {
             return file;
         }
     }
