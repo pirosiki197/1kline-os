@@ -1,6 +1,6 @@
-const printf = @import("common.zig").printf;
+const print = @import("common.zig").print;
 
 pub fn panic(comptime fmt: []const u8, args: anytype) noreturn {
-    printf("PANIC: " ++ fmt ++ "\n", args);
+    print("PANIC: " ++ fmt ++ "\n", args);
     while (true) {}
 }

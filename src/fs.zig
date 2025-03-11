@@ -2,8 +2,8 @@ const std = @import("std");
 
 const common = @import("common.zig");
 const virtio = @import("virtio.zig");
+const print = common.print;
 const panic = @import("panic.zig").panic;
-const printf = common.printf;
 const SECTOR_SIZE = common.SECTOR_SIZE;
 
 const TarHeader = extern struct {
@@ -64,7 +64,7 @@ pub fn init() void {
         }
 
         if (std.mem.orderZ(u8, @ptrCast(&header.magic), "ustar") != .eq) {
-            panic("invalid tar header magic: \"%s\"", .{header.magic});
+            panic("invalid tar header magic: \"{s}\"", .{header.magic});
         }
 
         const filesz = oct2int(&header.size);
@@ -73,7 +73,7 @@ pub fn init() void {
         std.mem.copyForwards(u8, &file.name, &header.name);
         _ = common.memcpy(&file.data, @ptrCast(&header.data), filesz);
         file.size = filesz;
-        printf("file: %s, size=%d\n", .{ &file.name, file.size });
+        print("file: {s}, size={d}\n", .{ &file.name, file.size });
         off += common.align_up(@sizeOf(TarHeader) + filesz, SECTOR_SIZE);
     }
 }

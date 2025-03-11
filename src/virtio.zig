@@ -1,7 +1,7 @@
 const common = @import("common.zig");
 const page = @import("page.zig");
 const panic = @import("panic.zig").panic;
-const printf = common.printf;
+const print = common.print;
 
 const PAGE_SIZE = common.PAGE_SIZE;
 const SECTOR_SIZE = common.SECTOR_SIZE;
@@ -118,7 +118,7 @@ pub fn init() void {
     reg_write32(VIRTIO_REG_DEVICE_STATUS, VIRTIO_STATUS_DRIVER_OK);
 
     blk_capacity = reg_read64(VIRTIO_REG_DEVICE_CONFIG + 0) * SECTOR_SIZE;
-    printf("virtio-blk: capacity is %d bytes\n", .{blk_capacity});
+    print("virtio-blk: capacity is {d} bytes\n", .{blk_capacity});
 
     blk_req_paddr = page.alloc(common.align_up(@sizeOf(virtio_blk_req), PAGE_SIZE) / PAGE_SIZE);
     blk_req = @ptrFromInt(blk_req_paddr);
@@ -154,7 +154,7 @@ fn virtq_is_busy(vq: *const virtio_virtq) bool {
 
 pub fn read_write_disk(buf: [*]u8, sector: usize, is_write: bool) void {
     if (sector >= blk_capacity / SECTOR_SIZE) {
-        printf("virtio: tried to read/write sector=%d, but capacity is %d\n", .{ sector, blk_capacity / SECTOR_SIZE });
+        print("virtio: tried to read/write sector={d}, but capacity is {d}\n", .{ sector, blk_capacity / SECTOR_SIZE });
         return;
     }
 
@@ -188,7 +188,7 @@ pub fn read_write_disk(buf: [*]u8, sector: usize, is_write: bool) void {
     while (virtq_is_busy(vq)) {}
 
     if (blk_req.status != 0) {
-        printf("virtio: warn: failed to read/write sector=%d status=%d\n", .{ sector, blk_req.status });
+        print("virtio: warn: failed to read/write sector={d} status={d}\n", .{ sector, blk_req.status });
         return;
     }
 

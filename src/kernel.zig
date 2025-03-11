@@ -8,7 +8,6 @@ const Process = proc.Process;
 const page = @import("page.zig");
 const fs = @import("fs.zig");
 const print = common.print;
-const printf = common.printf;
 const panic = @import("panic.zig").panic;
 
 const SCAUSE_ECALL = 8;
@@ -183,7 +182,7 @@ pub export fn handle_trap(f: *TrapFrame) void {
         handle_syscall(f);
         user_pc += 4;
     } else {
-        panic("unexpected trap scause=%x, stval=%x, sepc=%x\n", .{ scause, stval, user_pc });
+        panic("unexpected trap scause={x}, stval={x}, sepc={x}\n", .{ scause, stval, user_pc });
     }
 
     write_csr("sepc", user_pc);
@@ -203,7 +202,7 @@ fn handle_syscall(f: *TrapFrame) void {
             }
         },
         common.SYS_EXIT => {
-            printf("process %d exited\n", .{proc.current().pid});
+            print("process {d} exited\n", .{proc.current().pid});
             proc.current().exit();
             proc.yield();
             panic("unreachable", .{});
@@ -213,7 +212,7 @@ fn handle_syscall(f: *TrapFrame) void {
             const buf: [*]u8 = @ptrFromInt(f.a1);
             var len = f.a2;
             const file: *fs.File = fs.lookup(filename) orelse {
-                printf("file not found: %s\n", .{std.mem.span(filename)});
+                print("file not found: {s}\n", .{std.mem.span(filename)});
                 f.a0 = std.math.maxInt(usize);
                 return;
             };
@@ -232,7 +231,7 @@ fn handle_syscall(f: *TrapFrame) void {
 
             f.a0 = len;
         },
-        else => panic("unexpected syscall a3=0x%x\n", .{f.a3}),
+        else => panic("unexpected syscall a3=0x{x}\n", .{f.a3}),
     }
 }
 

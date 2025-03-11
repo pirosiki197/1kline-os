@@ -16,7 +16,7 @@ pub fn alloc(n: usize) usize {
     next_page += n * common.PAGE_SIZE;
 
     if (next_page > @intFromPtr(&symbol.__free_ram_end)) {
-        panic("out of memory: next_page=0x%x __free_ram_end=0x%x", .{ next_page, @intFromPtr(&symbol.__free_ram_end) });
+        panic("out of memory: next_page=0x{x} __free_ram_end=0x{x}", .{ next_page, @intFromPtr(&symbol.__free_ram_end) });
     }
 
     _ = common.memset(@ptrFromInt(addr), 0, n);
@@ -25,11 +25,11 @@ pub fn alloc(n: usize) usize {
 
 pub fn map(table1: [*]usize, vaddr: usize, paddr: usize, flgas: usize) void {
     if (vaddr % common.PAGE_SIZE != 0) {
-        panic("unaligned vaddr=0x%x", .{vaddr});
+        panic("unaligned vaddr=0x{x}", .{vaddr});
         return;
     }
     if (paddr % common.PAGE_SIZE != 0) {
-        panic("unaligned paddr=0x%x", .{paddr});
+        panic("unaligned paddr=0x{x}", .{paddr});
         return;
     }
 

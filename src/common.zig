@@ -1,3 +1,5 @@
+const std = @import("std");
+
 pub const PAGE_SIZE = 4096;
 
 pub const SECTOR_SIZE = 512;
@@ -30,79 +32,20 @@ pub fn memcpy(dst: [*]u8, src: [*]const u8, n: usize) *anyopaque {
     return dst;
 }
 
-pub fn printf(comptime fmt: []const u8, args: anytype) void {
-    const args_type = @typeInfo(@TypeOf(args));
-    if (args_type != .@"struct") {
-        @compileError("print() requires a struct argument");
-    }
-    const fields_info = args_type.@"struct".fields;
+const console = std.io.AnyWriter{
+    .context = undefined,
+    .writeFn = writeFn,
+};
 
-    comptime var idx: usize = 0;
-    comptime var field_idx: usize = 0;
-    inline while (idx < fmt.len) : (idx += 1) {
-        if (fmt[idx] != '%') {
-            put_char(fmt[idx]);
-            continue;
-        }
-
-        idx += 1;
-        switch (fmt[idx]) {
-            '%' => put_char('%'),
-            's' => {
-                const field = @field(args, fields_info[field_idx].name);
-                for (field) |c| {
-                    if (c == 0) {
-                        break;
-                    }
-                    put_char(c);
-                }
-                field_idx += 1;
-            },
-            'd' => {
-                var value: u32 = blk: {
-                    const field = @field(args, fields_info[field_idx].name);
-                    const _value: i32 = @intCast(field);
-                    if (_value < 0) {
-                        put_char('-');
-                        break :blk @intCast(-_value);
-                    }
-                    break :blk @intCast(_value);
-                };
-
-                var divisor: u32 = 1;
-                while (value / divisor >= 10) {
-                    divisor *= 10;
-                }
-
-                while (divisor > 0) {
-                    put_char('0' + @as(u8, @intCast(value / divisor)));
-                    value %= divisor;
-                    divisor /= 10;
-                }
-                field_idx += 1;
-            },
-            'x' => {
-                const value: usize = @intCast(@field(args, fields_info[field_idx].name));
-                comptime var i: isize = 7;
-                inline while (i >= 0) : (i -= 1) {
-                    const nibble = (value >> (i * 4)) & 0xf;
-                    if (nibble < 10) {
-                        put_char('0' + @as(u8, @intCast(nibble)));
-                    } else {
-                        put_char('a' + @as(u8, @intCast(nibble - 10)));
-                    }
-                }
-                field_idx += 1;
-            },
-            else => {},
-        }
-    }
-}
-
-pub fn print(s: []const u8) void {
-    for (s) |c| {
+fn writeFn(_: *const anyopaque, bytes: []const u8) anyerror!usize {
+    for (bytes) |c| {
         put_char(c);
     }
+    return bytes.len;
+}
+
+pub fn print(comptime fmt: []const u8, args: anytype) void {
+    console.print(fmt, args) catch unreachable;
 }
 
 pub fn cstrcpy(dst: [*]u8, src: []const u8) void {
