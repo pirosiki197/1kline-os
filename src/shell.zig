@@ -37,7 +37,7 @@ pub export fn main() void {
                 if (len == -1) {
                     print("failed to read file\n", .{});
                 } else {
-                    print("{s}\n", .{read_buf[0..@intCast(len)]});
+                    print("{s}", .{read_buf[0..@intCast(len)]});
                 }
             } else if (std.mem.eql(u8, cmdline, "writefile")) {
                 _ = common.writefile("hello.txt", "Hello, from shell!\n", 19);
