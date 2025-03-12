@@ -21,7 +21,7 @@ const ProcessState = enum {
 
 pub fn init() void {
     idle_proc = Process.create(0, 0);
-    idle_proc.pid = -1;
+    idle_proc.pid = 0;
     current_proc = idle_proc;
 }
 
@@ -29,7 +29,7 @@ pub fn current() *Process {
     return current_proc;
 }
 
-fn user_entry() callconv(.Naked) void {
+fn user_entry() callconv(.naked) void {
     asm volatile (
         \\ csrw sepc, %[sepc]
         \\ csrw sstatus, %[sstatus]
@@ -41,7 +41,7 @@ fn user_entry() callconv(.Naked) void {
 }
 
 pub const Process = struct {
-    pid: i32,
+    pid: usize,
     state: ProcessState,
     sp: usize, // stack pointer at the time of the last context switch
     page_table: [*]usize,
@@ -59,7 +59,7 @@ pub const Process = struct {
         var maybe_proc: ?*Process = null;
         for (0..PROCS_MAX) |i| {
             if (processes[i].state == .Unused) {
-                processes[i].pid = @intCast(i + 1);
+                processes[i].pid = i + 1;
                 processes[i].state = .Runnable;
                 maybe_proc = &processes[i];
                 break;
@@ -158,7 +158,7 @@ inline fn switch_context(prev_sp: *usize, next_sp: *usize) void {
 pub fn yield() void {
     var next = idle_proc;
     for (0..PROCS_MAX) |i| {
-        const proc = &processes[@intCast(@mod(current_proc.pid + @as(i32, @intCast(i)), PROCS_MAX))];
+        const proc = &processes[(current_proc.pid + i) % PROCS_MAX];
         if (proc.state == .Runnable and proc.pid > 0) {
             next = proc;
             break;

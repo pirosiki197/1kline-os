@@ -93,7 +93,7 @@ fn sbi_call(arg0: usize, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg
     return SbiRet{ .err = err, .value = value };
 }
 
-fn kernel_entry() align(4) callconv(.Naked) void {
+fn kernel_entry() align(4) callconv(.naked) void {
     asm volatile (
         \\ csrrw sp, sscratch, sp
         \\
@@ -235,12 +235,6 @@ fn handle_syscall(f: *TrapFrame) void {
     }
 }
 
-fn delay() void {
-    for (0..1000000) |_| {
-        asm volatile ("nop");
-    }
-}
-
 pub export fn kernel_main() void {
     _ = common.memset(@ptrCast(@constCast(&symbol.__bss)), 0, @intFromPtr(&symbol.__bss_end) - @intFromPtr(&symbol.__bss));
 
@@ -258,7 +252,7 @@ pub export fn kernel_main() void {
     panic("switched to idle process", .{});
 }
 
-pub export fn boot() linksection(".text.boot") callconv(.Naked) void {
+pub export fn boot() linksection(".text.boot") callconv(.naked) void {
     _ = asm volatile (
         \\ mv sp, %[stack_top]
         \\ j kernel_main

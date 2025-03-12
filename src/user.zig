@@ -2,7 +2,7 @@ const common = @import("common.zig");
 
 extern const __stack_top: anyopaque;
 
-pub export fn start() linksection(".text.start") callconv(.Naked) void {
+pub export fn start() linksection(".text.start") callconv(.naked) void {
     asm volatile (
         \\ mv sp, %[stack_top]
         \\ call main
